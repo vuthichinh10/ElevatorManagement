@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from '../styles/loginStyle';
 import {
   Alert,
@@ -23,7 +24,7 @@ const LoginScreen = ({navigation}: Props) => {
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username.trim()) {
       Alert.alert('Thông báo', 'Vui lòng nhập tên đăng nhập.');
       return;
@@ -33,11 +34,35 @@ const LoginScreen = ({navigation}: Props) => {
       Alert.alert('Thông báo', 'Vui lòng nhập mật khẩu.');
       return;
     }
+    const response = await fetch('http://192.168.0.104:3000/login', {
+       method: 'POST',
+       headers: {
+         'Content-Type': 'application/json',
+     },
+       body: JSON.stringify({
+         username,
+         password,
+    }),
+});
+  const data = await response.json();
+  if (!response.ok) {
+  Alert.alert('Đăng nhập thất bại', data.message);
+  return;
+}
+  await AsyncStorage.setItem('token', data.token);
 
-    // TODO: Gọi API đăng nhập ở đây
-    Alert.alert('Đăng nhập', `Xin chào ${username}!`);
+  Alert.alert(
+    'Đăng nhập thành công',
+    `Xin chào ${data.user.username}`,
+  [
+    {
+      text: 'OK',
+     onPress: () => navigation.navigate('OwnerHome'),
+    },
+  ],
+);
   };
-
+ 
   const handleGoogleLogin = () => {
     Alert.alert('Google', 'Đăng nhập bằng Google');
   };
