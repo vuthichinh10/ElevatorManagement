@@ -9,10 +9,21 @@ import {
 
 import LoginScreen from '../screens/login';
 import RegisterScreen from '../screens/register';
-
+import OwnerHome from '../screens/OwnerHome';
+import ElevatorInfo from '../screens/ElevatorInfo';
+import TechnicalInfo from '../screens/TechnicalInfo';
+import Inspections from '../screens/Inspections';
+import ServiceHistory from '../screens/ServiceHistory';
+import HomeScreen from '../screens/Home';
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
+  Home: undefined;
+  OwnerHome: undefined;
+  ElevatorInfo: undefined;
+  TechnicalInfo: undefined;
+  Inspections: undefined;
+  ServiceHistory: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -37,6 +48,31 @@ const AppNavigator = () => {
           name="Register"
           component={RegisterScreen}
         />
+        <Stack.Screen
+          name="Home"
+          component={HomeScreen}
+          
+        />      
+        <Stack.Screen
+          name="OwnerHome"
+          component={OwnerHome}
+        />
+         <Stack.Screen
+          name="ElevatorInfo"
+          component={ElevatorInfo}
+        />
+         <Stack.Screen
+          name="TechnicalInfo"
+          component={TechnicalInfo}
+        />
+         <Stack.Screen
+          name="Inspections"
+          component={Inspections}
+        />
+         <Stack.Screen
+          name="ServiceHistory"
+          component={ServiceHistory}
+/>
 
       </Stack.Navigator>
 
