@@ -1,320 +1,51 @@
 import React from 'react';
-import {
-  ImageBackground,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
-import {useNavigation} from '@react-navigation/native';
-import type {NativeStackNavigationProp} from '@react-navigation/native-stack';
+import {SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../navigation/AppNavigation';
+import MenuRow from '../ui/MenuRow';
+import {colors} from '../ui/theme';
 
-const OwnerHome = () => {
-  const navigation =
-    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  return (
-    <ImageBackground
-      source={require('../../assets/background.jpg')}
-      style={styles.background}
-      resizeMode="cover">
+type Props = NativeStackScreenProps<RootStackParamList, 'OwnerHome'>;
 
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
-
-          {/* ================= HEADER ================= */}
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              Elevator Management
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Quản lý thang máy thông minh
-            </Text>
-          </View>
-
-
-          {/* ================= THÔNG TIN CHUNG ================= */}
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('ElevatorInfo')}>
-
-            <View style={styles.iconBox}>
-              <Text style={styles.icon}>
-                ①
-              </Text>
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Thông tin chung
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Xem tổng quan thông tin thang máy.
-              </Text>
-            </View>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-
-          </TouchableOpacity>
-
-
-          {/* ================= THÔNG SỐ KỸ THUẬT ================= */}
-            <TouchableOpacity
-              style={styles.card}
-              activeOpacity={0.8}
-              onPress={() => navigation.navigate('TechnicalInfo')}>
-
-            <View style={styles.iconBox}>
-              <Text style={styles.icon}>
-                ▤
-              </Text>
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Thông số kỹ thuật
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Xem chi tiết các thông số kỹ thuật.
-              </Text>
-            </View>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-
-          </TouchableOpacity>
-
-
-          {/* ================= DỮ LIỆU KIỂM ĐỊNH ================= */}
-            <TouchableOpacity
-             style={styles.card}
-             activeOpacity={0.8} 
-             onPress={() => navigation.navigate('Inspections')}> 
-
-            <View style={styles.iconBox}>
-              <Text style={styles.icon}>
-                ◉
-              </Text>
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Dữ liệu kiểm định
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Xem hồ sơ và kết quả kiểm định.
-              </Text>
-            </View>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-
-          </TouchableOpacity>
-
-
-          {/* ================= LỊCH SỬ DỊCH VỤ ================= */}
-           <TouchableOpacity
-             style={styles.card}
-             activeOpacity={0.8}
-             onPress={() => navigation.navigate('ServiceHistory')}>
-
-            <View style={styles.iconBox}>
-              <Text style={styles.icon}>
-                ◷
-              </Text>
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Lịch sử dịch vụ
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Theo dõi lịch sử bảo trì và sửa chữa.
-              </Text>
-            </View>
-
-            <Text style={styles.arrow}>
-              ›
-            </Text>
-
-          </TouchableOpacity>
-
-        </ScrollView>
-      </SafeAreaView>
-    </ImageBackground>
-  );
-};
-
+const OwnerHome = ({navigation}: Props) => (
+  <SafeAreaView style={styles.screen}>
+    <ScrollView contentContainerStyle={styles.content}>
+      <View style={styles.brand}>
+        <View>
+          <Text style={styles.brandName}>ElevatorPro</Text>
+          <Text style={styles.brandSub}>Quản lý thang máy thông minh</Text>
+        </View>
+        <View style={styles.bell}><Text style={styles.bellText}>♢</Text></View>
+      </View>
+      <MenuRow icon="◇" title="Thông tin chung" featured onPress={() => navigation.navigate('ElevatorInfo')} />
+      <MenuRow icon="▤" title="Thông số kỹ thuật thang" onPress={() => navigation.navigate('TechnicalInfo')} />
+      <MenuRow icon="⬡" title="Dữ liệu kiểm định thang" onPress={() => navigation.navigate('Inspections')} />
+      <MenuRow icon="◷" title="Lịch sử dịch vụ" onPress={() => navigation.navigate('ServiceHistory')} />
+      <TouchableOpacity style={styles.banner} onPress={() => navigation.navigate('ElevatorInfo')}>
+        <Text style={styles.bannerIcon}>▥</Text>
+        <View style={{flex: 1}}>
+          <Text style={styles.bannerTitle}>An toàn hơn. Hiệu quả hơn.</Text>
+          <Text style={styles.bannerText}>Vì những tòa nhà thông minh hơn</Text>
+        </View>
+        <Text style={styles.bannerArrow}>›</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  </SafeAreaView>
+);
 
 const styles = StyleSheet.create({
-
-  /* ================= BACKGROUND ================= */
-
-  background: {
-    flex: 1,
-  },
-
-
-  /* ================= OVERLAY ================= */
-
-  container: {
-    flex: 1,
-
-    // Làm ảnh nền dịu lại nhưng vẫn nhìn thấy
-    backgroundColor: 'rgba(255,255,255,0.48)',
-  },
-
-
-  /* ================= MAIN CONTENT ================= */
-
-  content: {
-    flexGrow: 1,
-
-    paddingHorizontal: 20,
-    paddingVertical: 25,
-
-    /*
-     * Quan trọng:
-     * Đưa toàn bộ nhóm nội dung vào giữa màn hình.
-     *
-     * Khi màn hình cao:
-     * → không bị dồn lên phía trên.
-     *
-     * Khi màn hình thấp:
-     * → ScrollView vẫn cho phép cuộn.
-     */
-    justifyContent: 'center',
-  },
-
-
-  /* ================= HEADER ================= */
-
-  header: {
-    marginBottom: 22,
-  },
-
-  title: {
-    fontSize: 27,
-    fontWeight: 'bold',
-    color: '#123B78',
-  },
-
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
-    color: '#42658F',
-  },
-
-
-  /* ================= CARD ================= */
-
-  card: {
-    minHeight: 102,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-
-    backgroundColor: 'rgba(255,255,255,0.94)',
-
-    borderRadius: 20,
-
-    paddingHorizontal: 17,
-    paddingVertical: 16,
-
-    marginBottom: 14,
-
-    borderWidth: 1,
-    borderColor: 'rgba(80,160,230,0.22)',
-
-    shadowColor: '#000',
-
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-
-    elevation: 3,
-  },
-
-
-  /* ================= ICON ================= */
-
-  iconBox: {
-    width: 55,
-    height: 55,
-
-    borderRadius: 28,
-
-    backgroundColor: '#E5F2FF',
-
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  icon: {
-    fontSize: 27,
-    color: '#135FC4',
-  },
-
-
-  /* ================= CARD CONTENT ================= */
-
-  cardContent: {
-    flex: 1,
-
-    marginLeft: 16,
-
-    paddingRight: 8,
-  },
-
-  cardTitle: {
-    fontSize: 18,
-
-    fontWeight: 'bold',
-
-    color: '#123B78',
-  },
-
-  cardDescription: {
-    fontSize: 13,
-
-    lineHeight: 19,
-
-    color: '#607A9B',
-
-    marginTop: 6,
-  },
-
-
-  /* ================= ARROW ================= */
-
-  arrow: {
-    fontSize: 32,
-
-    color: '#1469D8',
-
-    marginLeft: 5,
-
-    marginRight: 2,
-  },
-
+  screen: {flex: 1, backgroundColor: colors.white},
+  content: {flexGrow: 1, paddingTop: 20, paddingBottom: 24},
+  brand: {paddingHorizontal: 21, marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'},
+  brandName: {fontSize: 22, fontWeight: '800', color: colors.navy, letterSpacing: -0.6},
+  brandSub: {fontSize: 11, color: colors.muted, marginTop: 3},
+  bell: {width: 34, height: 34, alignItems: 'center', justifyContent: 'center'},
+  bellText: {fontSize: 26, color: colors.navy},
+  banner: {marginHorizontal: 20, marginTop: 'auto', backgroundColor: colors.pale, borderRadius: 11, minHeight: 91, paddingHorizontal: 17, flexDirection: 'row', alignItems: 'center'},
+  bannerIcon: {fontSize: 37, color: colors.blue, marginRight: 18},
+  bannerTitle: {fontSize: 13, color: colors.navy, fontWeight: '700'},
+  bannerText: {fontSize: 11, color: colors.muted, marginTop: 4},
+  bannerArrow: {fontSize: 27, color: colors.blue},
 });
 
 export default OwnerHome;

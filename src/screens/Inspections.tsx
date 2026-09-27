@@ -1,490 +1,88 @@
-import React, {useEffect, useState} from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  ImageBackground,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useCallback, useState} from 'react';
+import {ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../navigation/AppNavigation';
+import {apiRequest, Elevator, ManagedUser} from '../admin/api';
+import AppHeader from '../ui/AppHeader';
+import {colors} from '../ui/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Inspections'>;
-const Inspections = ({route}: Props) => {
+type Inspection = {id: number; inspectionDate: string; inspectionUnit: string | null; result: string | null; description: string | null};
+const formatDate = (date: string) => /^\d{4}-\d{2}-\d{2}$/.test(date) ? `${date.slice(8, 10)}/${date.slice(5, 7)}/${date.slice(0, 4)}` : date;
+
+const Inspections = ({navigation, route}: Props) => {
   const selectedId = route.params?.elevatorId;
   const [elevatorId, setElevatorId] = useState<string | null>(null);
-  const [inspections, setInspections] = useState<any[]>([]);
+  const [records, setRecords] = useState<Inspection[]>([]);
+  const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  useEffect(() => {
-    const getInspections = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-
-        if (!token) {
-          Alert.alert(
-            'Lỗi',
-            'Không tìm thấy thông tin đăng nhập.',
-          );
-          return;
-        }
-
-        // Lấy thông tin thang máy của Owner
-        const elevatorResponse = await fetch(
-          'http://127.0.0.1:3000/elevators',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const elevatorData =
-          await elevatorResponse.json();
-
-        if (!elevatorResponse.ok) {
-          Alert.alert(
-            'Lỗi',
-            elevatorData.message ||
-              'Không lấy được thông tin thang máy.',
-          );
-          return;
-        }
-
-        if (elevatorData.length === 0) {
-          Alert.alert(
-            'Thông báo',
-            'Không tìm thấy thang máy được phân quyền.',
-          );
-          return;
-        }
-
-        const selected = selectedId ? elevatorData.find((item: any) => item.elevatorId === selectedId) : elevatorData[0];
-        if (!selected) {
-          Alert.alert('Lỗi', 'Không tìm thấy thang máy đã chọn.');
-          return;
-        }
-        const id = selected.elevatorId;
-
-        setElevatorId(id);
-
-        // Lấy dữ liệu kiểm định
-        const inspectionResponse = await fetch(
-          `http://127.0.0.1:3000/elevators/${id}/inspections`,
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const inspectionData =
-          await inspectionResponse.json();
-
-        if (!inspectionResponse.ok) {
-          Alert.alert(
-            'Lỗi',
-            inspectionData.message ||
-              'Không lấy được dữ liệu kiểm định.',
-          );
-          return;
-        }
-
-        setInspections(inspectionData);
-      } catch (error) {
-        console.error(
-          'Lỗi lấy dữ liệu kiểm định:',
-          error,
-        );
-
-        Alert.alert(
-          'Lỗi kết nối',
-          'Không thể kết nối tới Backend.',
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getInspections();
-  }, [selectedId]);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setLoading(true);
+    Promise.all([apiRequest<Elevator[]>('/elevators'), apiRequest<ManagedUser>('/me')])
+      .then(async ([elevators, user]) => {
+        const elevator = selectedId ? elevators.find(value => value.elevatorId === selectedId) : elevators[0];
+        if (!elevator) throw new Error('Không tìm thấy thang máy được phân quyền.');
+        const items = await apiRequest<Inspection[]>(`/elevators/${encodeURIComponent(elevator.elevatorId)}/inspections`);
+        if (active) {setElevatorId(elevator.elevatorId); setRecords(items); setCanEdit(user.role === 'technician' || user.role === 'admin'); setError('');}
+      })
+      .catch(err => {if (active) setError(err.message);})
+      .finally(() => {if (active) setLoading(false);});
+    return () => {active = false;};
+  }, [selectedId]));
 
   return (
-    <ImageBackground
-      source={require('../../assets/background.jpg')}
-      style={styles.background}
-      resizeMode="cover">
-
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
-
-          {/* ================= HEADER ================= */}
-
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              Dữ liệu kiểm định
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Hồ sơ và kết quả kiểm định thang máy
-            </Text>
-
-            {elevatorId && (
-              <Text style={styles.elevatorId}>
-                Mã thang máy: {elevatorId}
-              </Text>
-            )}
-          </View>
-
-
-          {/* ================= LOADING ================= */}
-
-          {loading ? (
-            <View style={styles.loading}>
-              <ActivityIndicator
-                size="large"
-                color="#135FC4"
-              />
-
-              <Text style={styles.loadingText}>
-                Đang tải dữ liệu...
-              </Text>
-            </View>
-          ) : inspections.length === 0 ? (
-
-            /* ================= EMPTY ================= */
-
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>
-                Chưa có dữ liệu kiểm định
-              </Text>
-
-              <Text style={styles.emptyText}>
-                Thang máy hiện chưa có hồ sơ kiểm định.
-              </Text>
-            </View>
-
-          ) : (
-
-            /* ================= INSPECTION LIST ================= */
-
-            <View style={styles.list}>
-
-              {inspections.map((inspection, index) => (
-                <View
-                  key={inspection.id}
-                  style={styles.card}>
-
-                  {/* Card header */}
-
-                  <View style={styles.cardHeader}>
-                    <View style={styles.numberBox}>
-                      <Text style={styles.number}>
-                        {index + 1}
-                      </Text>
-                    </View>
-
-                    <View style={styles.cardHeaderContent}>
-                      <Text style={styles.cardTitle}>
-                        Lần kiểm định {index + 1}
-                      </Text>
-
-                      <Text style={styles.date}>
-                        {inspection.inspectionDate}
-                      </Text>
-                    </View>
-
-                    <View style={styles.resultBadge}>
-                      <Text style={styles.resultText}>
-                        {inspection.result}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.separator} />
-
-                  {/* Inspection unit */}
-
-                  <View style={styles.infoBlock}>
-                    <Text style={styles.label}>
-                      Đơn vị kiểm định
-                    </Text>
-
-                    <Text style={styles.value}>
-                      {inspection.inspectionUnit ||
-                        'Chưa cập nhật'}
-                    </Text>
-                  </View>
-
-                  {/* Description */}
-
-                  <View style={styles.infoBlock}>
-                    <Text style={styles.label}>
-                      Nội dung
-                    </Text>
-
-                    <Text style={styles.description}>
-                      {inspection.description ||
-                        'Không có mô tả'}
-                    </Text>
-                  </View>
-
+    <SafeAreaView style={styles.screen}>
+      <AppHeader title="Dữ liệu kiểm định" />
+      <View style={{flex: 1}}>
+        <ScrollView contentContainerStyle={styles.content}>
+          {!!elevatorId && <View style={styles.summary}><Text style={styles.summaryIcon}>⬡</Text><View><Text style={styles.summaryTitle}>{elevatorId}</Text><Text style={styles.summaryNote}>Hồ sơ kiểm định thang máy</Text></View></View>}
+          {loading && <ActivityIndicator color={colors.blue} style={{marginTop: 36}} />}
+          {!!error && <Text style={styles.error}>{error}</Text>}
+          {!loading && !error && records.length === 0 && <Text style={styles.empty}>Chưa có dữ liệu kiểm định.</Text>}
+          {records.map((item, index) => {
+            const passed = item.result?.toLowerCase().includes('đạt') && !item.result?.toLowerCase().includes('không');
+            const color = passed ? colors.green : colors.orange;
+            const expanded = expandedId === item.id;
+            return <View style={styles.timelineRow} key={item.id}>
+              <View style={styles.rail}><View style={[styles.dot, {backgroundColor: color}]} /><View style={styles.line} /></View>
+              <TouchableOpacity style={styles.card} onPress={() => setExpandedId(expanded ? null : item.id)}>
+                <View style={[styles.iconCircle, {backgroundColor: color}]}><Text style={styles.iconText}>✓</Text></View>
+                <View style={{flex: 1}}>
+                  <Text style={styles.title}>Kiểm định lần {records.length - index}</Text>
+                  <Text style={styles.date}>{formatDate(item.inspectionDate)}</Text>
+                  <Text style={styles.info}>Kết quả: {item.result || 'Chưa cập nhật'}</Text>
+                  <Text style={styles.info} numberOfLines={expanded ? undefined : 2}>{item.description || 'Không có mô tả'}</Text>
+                  {expanded && <Text style={styles.unit}>Đơn vị: {item.inspectionUnit || 'Chưa cập nhật'}</Text>}
+                  {expanded && canEdit && elevatorId && <TouchableOpacity onPress={() => navigation.navigate('AdminRecordForm', {elevatorId, kind: 'inspection', recordId: item.id})}><Text style={styles.edit}>Cập nhật bản ghi  ›</Text></TouchableOpacity>}
                 </View>
-              ))}
-
-            </View>
-          )}
-
+                <Text style={styles.chevron}>{expanded ? '⌄' : '›'}</Text>
+              </TouchableOpacity>
+            </View>;
+          })}
         </ScrollView>
-      </SafeAreaView>
-    </ImageBackground>
+        {canEdit && elevatorId && <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AdminRecordForm', {elevatorId, kind: 'inspection'})}><Text style={styles.addText}>＋  Thêm bản ghi kiểm định</Text></TouchableOpacity>}
+      </View>
+    </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
-
-  /* ================= BACKGROUND ================= */
-
-  background: {
-    flex: 1,
-  },
-
-
-  /* ================= OVERLAY ================= */
-
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.48)',
-  },
-
-
-  /* ================= CONTENT ================= */
-
-  content: {
-    flexGrow: 1,
-
-    paddingHorizontal: 20,
-    paddingVertical: 25,
-    paddingBottom: 40,
-
-    justifyContent: 'center',
-  },
-
-
-  /* ================= HEADER ================= */
-
-  header: {
-    marginBottom: 20,
-  },
-
-  title: {
-    fontSize: 27,
-    fontWeight: 'bold',
-    color: '#123B78',
-  },
-
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
-    color: '#42658F',
-  },
-
-  elevatorId: {
-    fontSize: 13,
-    marginTop: 8,
-    color: '#607A9B',
-    fontWeight: '600',
-  },
-
-
-  /* ================= LOADING ================= */
-
-  loading: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 50,
-  },
-
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#607A9B',
-  },
-
-
-  /* ================= LIST ================= */
-
-  list: {
-    gap: 14,
-  },
-
-
-  /* ================= INSPECTION CARD ================= */
-
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-
-    borderRadius: 20,
-
-    padding: 17,
-
-    borderWidth: 1,
-    borderColor: 'rgba(80,160,230,0.22)',
-
-    shadowColor: '#000',
-
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-
-    elevation: 3,
-  },
-
-
-  /* ================= CARD HEADER ================= */
-
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-
-  numberBox: {
-    width: 44,
-    height: 44,
-
-    borderRadius: 22,
-
-    backgroundColor: '#E5F2FF',
-
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  number: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#135FC4',
-  },
-
-  cardHeaderContent: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#123B78',
-  },
-
-  date: {
-    fontSize: 13,
-    color: '#607A9B',
-    marginTop: 4,
-  },
-
-
-  /* ================= RESULT ================= */
-
-  resultBadge: {
-    backgroundColor: '#E7F7EE',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-
-  resultText: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#16834B',
-  },
-
-
-  /* ================= SEPARATOR ================= */
-
-  separator: {
-    height: 1,
-    backgroundColor: 'rgba(80,120,160,0.12)',
-    marginVertical: 14,
-  },
-
-
-  /* ================= INFO ================= */
-
-  infoBlock: {
-    marginBottom: 12,
-  },
-
-  label: {
-    fontSize: 13,
-    color: '#607A9B',
-    marginBottom: 4,
-  },
-
-  value: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#123B78',
-  },
-
-  description: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: '#42658F',
-  },
-
-
-  /* ================= EMPTY ================= */
-
-  emptyCard: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-
-    borderRadius: 20,
-
-    padding: 25,
-
-    alignItems: 'center',
-
-    borderWidth: 1,
-    borderColor: 'rgba(80,160,230,0.22)',
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-
-    elevation: 3,
-  },
-
-  emptyTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    color: '#123B78',
-  },
-
-  emptyText: {
-    fontSize: 14,
-    color: '#607A9B',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-
+  screen: {flex: 1, backgroundColor: colors.white}, content: {paddingHorizontal: 17, paddingTop: 15, paddingBottom: 30},
+  summary: {backgroundColor: colors.pale, borderRadius: 9, minHeight: 71, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginBottom: 14},
+  summaryIcon: {fontSize: 24, color: colors.white, backgroundColor: colors.blueDark, width: 43, height: 43, textAlign: 'center', textAlignVertical: 'center', borderRadius: 8, overflow: 'hidden', marginRight: 12},
+  summaryTitle: {fontSize: 15, fontWeight: '800', color: colors.navy}, summaryNote: {fontSize: 11, color: colors.muted, marginTop: 4},
+  error: {color: '#BE2E34', fontSize: 12}, empty: {color: colors.muted, textAlign: 'center', marginTop: 30},
+  timelineRow: {flexDirection: 'row', minHeight: 87}, rail: {width: 15, alignItems: 'center'}, dot: {width: 8, height: 8, borderRadius: 4, marginTop: 22}, line: {width: 1, backgroundColor: '#D7E6F3', flex: 1},
+  card: {flex: 1, flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line},
+  iconCircle: {width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 10}, iconText: {fontSize: 18, color: colors.white, fontWeight: '800'},
+  title: {fontSize: 13, fontWeight: '700', color: colors.navy}, date: {fontSize: 11, color: colors.muted, marginTop: 2}, info: {fontSize: 10, color: colors.muted, marginTop: 2}, unit: {fontSize: 10, color: colors.navy, marginTop: 4},
+  chevron: {fontSize: 23, color: colors.muted, marginLeft: 8}, edit: {fontSize: 11, color: colors.blue, fontWeight: '700', marginTop: 8},
+  addButton: {height: 48, backgroundColor: colors.blueDark, marginHorizontal: 17, marginBottom: 12, borderRadius: 7, alignItems: 'center', justifyContent: 'center'}, addText: {fontSize: 13, color: colors.white, fontWeight: '700'},
 });
 
 export default Inspections;

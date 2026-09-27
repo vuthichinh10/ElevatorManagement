@@ -1,347 +1,81 @@
 import React, {useEffect, useState} from 'react';
-import {
-  ActivityIndicator,
-  ImageBackground,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Alert,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, Text, View} from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {RootStackParamList} from '../navigation/AppNavigation';
+import {apiRequest, Elevator} from '../admin/api';
+import AppHeader from '../ui/AppHeader';
+import InfoRow from '../ui/InfoRow';
+import {colors} from '../ui/theme';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ElevatorInfo'>;
+
 const ElevatorInfo = ({route}: Props) => {
   const selectedId = route.params?.elevatorId;
-  const [elevator, setElevator] = useState<any>(null);
+  const [elevator, setElevator] = useState<Elevator | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const getElevator = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-
-        if (!token) {
-          Alert.alert(
-            'Lỗi',
-            'Không tìm thấy thông tin đăng nhập.',
-          );
-          return;
-        }
-
-        const response = await fetch(
-          'http://127.0.0.1:3000/elevators',
-          {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          },
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          Alert.alert(
-            'Lỗi',
-            data.message || 'Không lấy được thông tin thang máy.',
-          );
-          return;
-        }
-
-        const selected = selectedId ? data.find((item: any) => item.elevatorId === selectedId) : data[0];
-        if (selected) {
-          setElevator(selected);
-        } else {
-          Alert.alert(
-            'Thông báo',
-            'Không tìm thấy thang máy được phân quyền.',
-          );
-        }
-      } catch (error) {
-        console.error(
-          'Lỗi lấy thông tin thang máy:',
-          error,
-        );
-
-        Alert.alert(
-          'Lỗi kết nối',
-          'Không thể kết nối tới Backend.',
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getElevator();
+    let active = true;
+    setLoading(true);
+    apiRequest<Elevator[]>('/elevators')
+      .then(items => {
+        const item = selectedId ? items.find(value => value.elevatorId === selectedId) : items[0];
+        if (!item) throw new Error('Không tìm thấy thang máy được phân quyền.');
+        if (active) {setElevator(item); setError('');}
+      })
+      .catch(err => {if (active) setError(err.message);})
+      .finally(() => {if (active) setLoading(false);});
+    return () => {active = false;};
   }, [selectedId]);
 
+  const running = elevator?.status?.toLowerCase().includes('hoạt động') || elevator?.status?.toLowerCase() === 'active';
   return (
-    <ImageBackground
-      source={require('../../assets/background.jpg')}
-      style={styles.background}
-      resizeMode="cover">
-
-      <SafeAreaView style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}>
-
-          {/* Tiêu đề */}
-          <View style={styles.header}>
-            <Text style={styles.title}>
-              Thông tin chung
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Thông tin cơ bản của thang máy
-            </Text>
+    <SafeAreaView style={styles.screen}>
+      <AppHeader title="Thông tin thang máy" />
+      <ScrollView contentContainerStyle={styles.content}>
+        {loading && <ActivityIndicator style={{marginTop: 40}} color={colors.blue} />}
+        {!!error && <Text style={styles.error}>{error}</Text>}
+        {elevator && <>
+          <View style={styles.summary}>
+            <View style={styles.elevatorIcon}><Text style={styles.elevatorGlyph}>⇅</Text><View style={styles.door} /></View>
+            <View style={{flex: 1}}>
+              <Text style={styles.id}>{elevator.elevatorId}</Text>
+              <Text style={[styles.status, !running && styles.statusInactive]}>{elevator.status || 'Chưa cập nhật'}</Text>
+              <Text style={styles.summaryText}>Tòa nhà: {elevator.owner}</Text>
+              <Text style={styles.summaryText}>Vị trí: {elevator.location}, {elevator.city}</Text>
+            </View>
           </View>
-
-          {loading ? (
-            <View style={styles.loading}>
-              <ActivityIndicator
-                size="large"
-                color="#135FC4"
-              />
-
-              <Text style={styles.loadingText}>
-                Đang tải dữ liệu...
-              </Text>
-            </View>
-          ) : elevator ? (
-            <View style={styles.card}>
-
-              {/* Mã thang máy */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Mã thang máy
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.elevatorId}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Chủ sở hữu */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Chủ sở hữu
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.owner}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Vị trí */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Vị trí
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.location}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Thành phố */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Thành phố
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.city}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Nhà sản xuất */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Nhà sản xuất
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.manufacturer}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Ngày lắp đặt */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Ngày lắp đặt
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.installationDate}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Loại */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Loại thang
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.type}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Sức chứa */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Sức chứa
-                </Text>
-
-                <Text style={styles.value}>
-                  {elevator.capacity}
-                </Text>
-              </View>
-
-              <View style={styles.separator} />
-
-              {/* Trạng thái */}
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>
-                  Trạng thái
-                </Text>
-
-                <Text style={styles.status}>
-                  {elevator.status}
-                </Text>
-              </View>
-
-            </View>
-          ) : null}
-
-        </ScrollView>
-      </SafeAreaView>
-    </ImageBackground>
+          <View style={styles.rows}>
+            <InfoRow icon="▥" label="Mã định danh thang" value={elevator.elevatorId} />
+            <InfoRow icon="♙" label="Chủ sở hữu" value={elevator.owner} />
+            <InfoRow icon="◎" label="Địa chỉ lắp đặt" value={elevator.location} />
+            <InfoRow icon="▤" label="Tỉnh / thành" value={elevator.city} />
+            <InfoRow icon="▣" label="Hãng sản xuất" value={elevator.manufacturer} />
+            <InfoRow icon="▦" label="Ngày đưa vào sử dụng" value={elevator.installationDate} />
+            <InfoRow icon="◫" label="Loại thang" value={elevator.type} />
+            <InfoRow icon="◴" label="Tải trọng" value={elevator.capacity} />
+            <InfoRow icon="⌁" label="Trạng thái hoạt động" value={elevator.status} last />
+          </View>
+        </>}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
-
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.48)',
-  },
-
-  content: {
-    paddingHorizontal: 20,
-    paddingVertical: 25,
-    paddingBottom: 40,
-  },
-
-  header: {
-    marginBottom: 20,
-  },
-
-  title: {
-    fontSize: 27,
-    fontWeight: 'bold',
-    color: '#123B78',
-  },
-
-  subtitle: {
-    fontSize: 15,
-    marginTop: 6,
-    color: '#42658F',
-  },
-
-  loading: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 80,
-  },
-
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: '#607A9B',
-  },
-
-  card: {
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    borderRadius: 20,
-    paddingHorizontal: 18,
-    paddingVertical: 8,
-
-    borderWidth: 1,
-    borderColor: 'rgba(80,160,230,0.22)',
-
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 5,
-    elevation: 3,
-  },
-
-  infoRow: {
-    minHeight: 58,
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  label: {
-    flex: 1,
-
-    fontSize: 15,
-    color: '#607A9B',
-  },
-
-  value: {
-    flex: 1,
-
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#123B78',
-
-    textAlign: 'right',
-  },
-
-  status: {
-    flex: 1,
-
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#16834B',
-
-    textAlign: 'right',
-  },
-
-  separator: {
-    height: 1,
-    backgroundColor: 'rgba(80,120,160,0.12)',
-  },
+  screen: {flex: 1, backgroundColor: colors.white},
+  content: {paddingHorizontal: 17, paddingTop: 15, paddingBottom: 26},
+  error: {color: '#C93434', fontSize: 13, marginTop: 20},
+  summary: {backgroundColor: colors.pale, borderRadius: 10, padding: 12, flexDirection: 'row', alignItems: 'center', minHeight: 103, marginBottom: 10},
+  elevatorIcon: {width: 60, height: 66, borderRadius: 9, backgroundColor: colors.blueDark, alignItems: 'center', justifyContent: 'center', marginRight: 13},
+  elevatorGlyph: {color: colors.white, fontSize: 18, lineHeight: 19, fontWeight: '700'},
+  door: {height: 24, width: 25, borderWidth: 2, borderColor: colors.white, borderRadius: 3, marginTop: 1},
+  id: {fontSize: 16, color: colors.navy, fontWeight: '800', marginBottom: 4},
+  status: {alignSelf: 'flex-start', fontSize: 10, color: '#08724B', backgroundColor: '#D8F5E7', borderRadius: 5, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden', marginBottom: 5},
+  statusInactive: {color: '#9D5E14', backgroundColor: '#FFF0D8'},
+  summaryText: {color: colors.muted, fontSize: 10, lineHeight: 15},
+  rows: {borderWidth: 1, borderColor: colors.line, borderRadius: 9, overflow: 'hidden'},
 });
 
 export default ElevatorInfo;

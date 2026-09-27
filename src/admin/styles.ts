@@ -1,19 +1,20 @@
 import {StyleSheet} from 'react-native';
+import {colors} from '../ui/theme';
 
 export default StyleSheet.create({
-  screen: {flex: 1, backgroundColor: '#F3F7FC'},
+  screen: {flex: 1, backgroundColor: colors.white},
   content: {padding: 20, paddingBottom: 36},
-  title: {fontSize: 28, fontWeight: '700', color: '#123B78', marginBottom: 5},
-  subtitle: {fontSize: 15, color: '#607A9B', marginBottom: 22},
-  section: {fontSize: 18, fontWeight: '700', color: '#123B78', marginBottom: 10, marginTop: 10},
-  card: {backgroundColor: '#FFFFFF', borderRadius: 16, padding: 17, marginBottom: 11, borderWidth: 1, borderColor: '#DBE6F3'},
-  cardTitle: {fontSize: 17, fontWeight: '600', color: '#123B78'},
-  cardDetail: {fontSize: 14, color: '#607A9B', marginTop: 5},
-  label: {fontSize: 14, fontWeight: '600', color: '#123B78', marginBottom: 6},
-  input: {backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#B9CBE1', borderRadius: 10, paddingHorizontal: 12, minHeight: 46, color: '#162D4B', marginBottom: 16},
-  button: {backgroundColor: '#135FC4', padding: 15, borderRadius: 12, alignItems: 'center', marginBottom: 12},
+  title: {fontSize: 25, fontWeight: '800', color: colors.navy, marginBottom: 5},
+  subtitle: {fontSize: 13, color: colors.muted, marginBottom: 22},
+  section: {fontSize: 17, fontWeight: '700', color: colors.navy, marginBottom: 10, marginTop: 10},
+  card: {backgroundColor: colors.paleBlue, borderRadius: 11, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: colors.line},
+  cardTitle: {fontSize: 16, fontWeight: '700', color: colors.navy},
+  cardDetail: {fontSize: 12, color: colors.muted, marginTop: 5},
+  label: {fontSize: 13, fontWeight: '700', color: colors.navy, marginBottom: 6},
+  input: {backgroundColor: colors.white, borderWidth: 1, borderColor: '#BCD8F3', borderRadius: 7, paddingHorizontal: 12, minHeight: 46, color: colors.navy, marginBottom: 16},
+  button: {backgroundColor: colors.blueDark, padding: 14, borderRadius: 7, alignItems: 'center', marginBottom: 12},
   buttonText: {fontSize: 16, fontWeight: '700', color: '#FFFFFF'},
-  secondaryButton: {backgroundColor: '#E5F2FF', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 8},
-  secondaryText: {color: '#135FC4', fontSize: 15, fontWeight: '600'},
+  secondaryButton: {backgroundColor: colors.pale, padding: 12, borderRadius: 7, alignItems: 'center', marginTop: 8},
+  secondaryText: {color: colors.blue, fontSize: 14, fontWeight: '700'},
   error: {color: '#B42318', marginBottom: 12},
 });
