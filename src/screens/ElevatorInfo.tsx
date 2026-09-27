@@ -10,8 +10,12 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation/AppNavigation';
 
-const ElevatorInfo = () => {
+type Props = NativeStackScreenProps<RootStackParamList, 'ElevatorInfo'>;
+const ElevatorInfo = ({route}: Props) => {
+  const selectedId = route.params?.elevatorId;
   const [elevator, setElevator] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +33,7 @@ const ElevatorInfo = () => {
         }
 
         const response = await fetch(
-          'http://192.168.0.104:3000/elevators',
+          'http://127.0.0.1:3000/elevators',
           {
             method: 'GET',
             headers: {
@@ -48,8 +52,9 @@ const ElevatorInfo = () => {
           return;
         }
 
-        if (data.length > 0) {
-          setElevator(data[0]);
+        const selected = selectedId ? data.find((item: any) => item.elevatorId === selectedId) : data[0];
+        if (selected) {
+          setElevator(selected);
         } else {
           Alert.alert(
             'Thông báo',
@@ -72,7 +77,7 @@ const ElevatorInfo = () => {
     };
 
     getElevator();
-  }, []);
+  }, [selectedId]);
 
   return (
     <ImageBackground

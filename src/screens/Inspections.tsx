@@ -10,8 +10,12 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation/AppNavigation';
 
-const Inspections = () => {
+type Props = NativeStackScreenProps<RootStackParamList, 'Inspections'>;
+const Inspections = ({route}: Props) => {
+  const selectedId = route.params?.elevatorId;
   const [elevatorId, setElevatorId] = useState<string | null>(null);
   const [inspections, setInspections] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,7 @@ const Inspections = () => {
 
         // Lấy thông tin thang máy của Owner
         const elevatorResponse = await fetch(
-          'http://192.168.0.104:3000/elevators',
+          'http://127.0.0.1:3000/elevators',
           {
             method: 'GET',
             headers: {
@@ -60,13 +64,18 @@ const Inspections = () => {
           return;
         }
 
-        const id = elevatorData[0].elevatorId;
+        const selected = selectedId ? elevatorData.find((item: any) => item.elevatorId === selectedId) : elevatorData[0];
+        if (!selected) {
+          Alert.alert('Lỗi', 'Không tìm thấy thang máy đã chọn.');
+          return;
+        }
+        const id = selected.elevatorId;
 
         setElevatorId(id);
 
         // Lấy dữ liệu kiểm định
         const inspectionResponse = await fetch(
-          `http://192.168.0.104:3000/elevators/${id}/inspections`,
+          `http://127.0.0.1:3000/elevators/${id}/inspections`,
           {
             method: 'GET',
             headers: {
@@ -104,7 +113,7 @@ const Inspections = () => {
     };
 
     getInspections();
-  }, []);
+  }, [selectedId]);
 
   return (
     <ImageBackground

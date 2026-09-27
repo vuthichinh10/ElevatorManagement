@@ -21,7 +21,7 @@ const HomeScreen = () => {
 
         // Gọi API lấy thông tin thang máy
         const response = await fetch(
-          'http://192.168.0.104:3000/elevators',
+          'http://127.0.0.1:3000/elevators',
           {
             method: 'GET',
             headers: {

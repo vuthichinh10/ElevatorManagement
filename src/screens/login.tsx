@@ -6,7 +6,6 @@ import {
   ImageBackground,
   SafeAreaView,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -34,7 +33,7 @@ const LoginScreen = ({navigation}: Props) => {
       Alert.alert('Thông báo', 'Vui lòng nhập mật khẩu.');
       return;
     }
-    const response = await fetch('http://192.168.0.104:3000/login', {
+    const response = await fetch('http://127.0.0.1:3000/login', {
        method: 'POST',
        headers: {
          'Content-Type': 'application/json',
@@ -51,13 +50,17 @@ const LoginScreen = ({navigation}: Props) => {
 }
   await AsyncStorage.setItem('token', data.token);
 
+  const destination: 'AdminHome' | 'OwnerHome' | 'TechnicianHome' =
+    data.user.role === 'admin' ? 'AdminHome' :
+    data.user.role === 'technician' ? 'TechnicianHome' : 'OwnerHome';
+
   Alert.alert(
     'Đăng nhập thành công',
     `Xin chào ${data.user.username}`,
   [
     {
       text: 'OK',
-     onPress: () => navigation.navigate('OwnerHome'),
+     onPress: () => navigation.replace(destination),
     },
   ],
 );

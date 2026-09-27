@@ -10,8 +10,12 @@ import {
   View,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {NativeStackScreenProps} from '@react-navigation/native-stack';
+import type {RootStackParamList} from '../navigation/AppNavigation';
 
-const ServiceHistory = () => {
+type Props = NativeStackScreenProps<RootStackParamList, 'ServiceHistory'>;
+const ServiceHistory = ({route}: Props) => {
+  const selectedId = route.params?.elevatorId;
   const [elevatorId, setElevatorId] = useState<string | null>(null);
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,7 @@ const ServiceHistory = () => {
 
         // Lấy thang máy được phân quyền cho Owner
         const elevatorResponse = await fetch(
-          'http://192.168.0.104:3000/elevators',
+          'http://127.0.0.1:3000/elevators',
           {
             method: 'GET',
             headers: {
@@ -60,13 +64,18 @@ const ServiceHistory = () => {
           return;
         }
 
-        const id = elevatorData[0].elevatorId;
+        const selected = selectedId ? elevatorData.find((item: any) => item.elevatorId === selectedId) : elevatorData[0];
+        if (!selected) {
+          Alert.alert('Lỗi', 'Không tìm thấy thang máy đã chọn.');
+          return;
+        }
+        const id = selected.elevatorId;
 
         setElevatorId(id);
 
         // Lấy lịch sử dịch vụ
         const serviceResponse = await fetch(
-          `http://192.168.0.104:3000/elevators/${id}/services`,
+          `http://127.0.0.1:3000/elevators/${id}/services`,
           {
             method: 'GET',
             headers: {
@@ -104,7 +113,7 @@ const ServiceHistory = () => {
     };
 
     getServices();
-  }, []);
+  }, [selectedId]);
 
   // Chuyển loại dịch vụ sang tiếng Việt
   const getServiceType = (type: string) => {
